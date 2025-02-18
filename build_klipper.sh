@@ -1,6 +1,7 @@
 #!/bin/bash
 
 KLIPPER_REPO="https://github.com/Klipper3d/klipper.git"
+KLIPPER_BUILD_DIR="klipper"
 declare -A BOARD_CONFIGS
 
 for config_file in configs/*.config; do
@@ -15,7 +16,7 @@ load_menuconfig() {
 }
 
 get_latest_klipper_version() {
-    cd "klipper"
+    cd "$KLIPPER_BUILD_DIR"
     git fetch --tags
     latest_tag=$(git describe --tags --always)
     cd ..
@@ -47,6 +48,8 @@ main() {
     # Ensure we're in the script's directory
     cd "$(dirname "$0")"
     
+    tree -L 4
+
     # Clone or update Klipper repository in build directory
     if [ ! -d "$KLIPPER_BUILD_DIR" ]; then
         echo "Cloning Klipper"
@@ -78,11 +81,10 @@ main() {
         echo "Building for $board -> $output_file"
         
         cd "$KLIPPER_BUILD_DIR"
-        pwd 
-        ls -al
+        
         # Load config if exists, otherwise create it
-        if [ -f "../configs/$board.config" ]; then
-            load_menuconfig "../configs/$board.config"
+        if [ -f "${BOARD_CONFIGS[$board]}" ]; then
+            load_menuconfig "${BOARD_CONFIGS[$board]}"
         else
             echo "No config found for $board. Please configure one:"
             continue
