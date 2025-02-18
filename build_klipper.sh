@@ -4,7 +4,7 @@ set -e  # Exit on any error
 
 KLIPPER_REPO="https://github.com/Klipper3d/klipper.git"
 KLIPPER_BUILD_DIR="$(pwd)/klipper"
-FIRMWARE_OUTPUT_DIR="firmware_binaries"
+FIRMWARE_OUTPUT_DIR="$(pwd)/firmware_binaries"
 declare -A BOARD_CONFIGS
 
 # Initialize board configs
