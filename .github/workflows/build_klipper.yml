@@ -20,7 +20,7 @@ jobs:
     - name: Check for new Klipper version
       id: check_version
       run: |
-        git clone --depth=1 https://github.com/Klipper3d/klipper.git temp_klipper
+        git clone https://github.com/Klipper3d/klipper.git temp_klipper
         cd temp_klipper
         LATEST_TAG=$(git describe --tags --always)
         cd ..
@@ -76,8 +76,8 @@ jobs:
           ```
 
           Each firmware file is named according to its target board.
-        env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Cleanup build
       if: always()
