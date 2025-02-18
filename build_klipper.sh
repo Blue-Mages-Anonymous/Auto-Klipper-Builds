@@ -1,9 +1,13 @@
 #!/bin/bash
 
+set -e  # Exit on any error
+
 KLIPPER_REPO="https://github.com/Klipper3d/klipper.git"
-KLIPPER_BUILD_DIR="klipper"
+KLIPPER_BUILD_DIR="$(pwd)/klipper"
+FIRMWARE_OUTPUT_DIR="firmware_binaries"
 declare -A BOARD_CONFIGS
 
+# Initialize board configs
 for config_file in configs/*.config; do
     filename=$(basename "$config_file")
     key="${filename%.config}"
@@ -12,6 +16,7 @@ done
 
 load_menuconfig() {
     config_file=$1
+    echo "Loading config from: $config_file"
     cp "$config_file" .config
 }
 
@@ -19,46 +24,55 @@ get_latest_klipper_version() {
     cd "$KLIPPER_BUILD_DIR"
     git fetch --tags
     latest_tag=$(git describe --tags --always)
-    cd ..
+    cd - > /dev/null
     echo "$latest_tag"
 }
-
 
 build_firmware() {
     board_config=$1
     output_path=$2
     
+    echo "Building firmware with config: $board_config"
+    echo "Output path will be: $output_path"
+    
     make clean
     make
     
     # Create directory if it doesn't exist
-    mkdir -p "$(dirname ../$output_path)"
+    mkdir -p "$FIRMWARE_OUTPUT_DIR"
     
     # Check if we need .uf2 or .bin
-    if [[ "$output_path" == *".uf2" ]]; then
+    if [[ "$board_config" == *"pico"* ]]; then
         # For RP2040 boards
-        cp out/klipper.uf2 "../$output_path"
+        cp out/klipper.uf2 "$FIRMWARE_OUTPUT_DIR/${board_config}.uf2"
     else
         # For other boards
-        cp out/klipper.bin "../$output_path"
+        cp out/klipper.bin "$FIRMWARE_OUTPUT_DIR/${board_config}.bin"
     fi
 }
 
 main() {
     # Ensure we're in the script's directory
     cd "$(dirname "$0")"
+    SCRIPT_DIR="$(pwd)"
     
-    tree -L 4
-
-    # Clone or update Klipper repository in build directory
+    # Create or clean firmware output directory
+    mkdir -p "$FIRMWARE_OUTPUT_DIR"
+    rm -rf "${FIRMWARE_OUTPUT_DIR:?}"/*
+    
+    echo "Current directory: $(pwd)"
+    echo "Klipper build directory will be: $KLIPPER_BUILD_DIR"
+    
+    # Clone or update Klipper repository
     if [ ! -d "$KLIPPER_BUILD_DIR" ]; then
-        echo "Cloning Klipper"
+        echo "Cloning Klipper to $KLIPPER_BUILD_DIR"
         git clone "$KLIPPER_REPO" "$KLIPPER_BUILD_DIR"
     else
+        echo "Updating existing Klipper repository"
         cd "$KLIPPER_BUILD_DIR"
         git fetch origin
         git reset --hard origin/master
-        cd ..
+        cd "$SCRIPT_DIR"
     fi
     
     # Get latest version
@@ -70,37 +84,32 @@ main() {
     for board in "${!BOARD_CONFIGS[@]}"; do
         echo "- $board" >> board_list.txt
     done
+    
     cat board_list.txt
-
-    #Check where we are working directory wise
-    pwd
-
+    
     # Build for each board
     for board in "${!BOARD_CONFIGS[@]}"; do
-        output_file="${BOARD_CONFIGS[$board]}"
-        echo "Building for $board -> $output_file"
+        echo "Processing board: $board"
+        config_file="${BOARD_CONFIGS[$board]}"
+        echo "Config file: $config_file"
         
-        cd "$KLIPPER_BUILD_DIR"
-        
-        # Load config if exists, otherwise create it
-        if [ -f "${BOARD_CONFIGS[$board]}" ]; then
-            load_menuconfig "${BOARD_CONFIGS[$board]}"
-        else
-            echo "No config found for $board. Please configure one:"
+        if [ ! -f "$config_file" ]; then
+            echo "Error: Config file not found: $config_file"
             continue
         fi
         
-        # Build firmware
-        build_firmware "$board" "$output_file"
-        cd ..
+        cd "$KLIPPER_BUILD_DIR"
+        
+        echo "Loading config for $board"
+        load_menuconfig "../$config_file"
+        
+        echo "Building firmware for $board"
+        build_firmware "$board" "$FIRMWARE_OUTPUT_DIR/$board"
+        
+        cd "$SCRIPT_DIR"
     done
     
-    # Cleanup
-    echo "Cleaning up build directory..."
-    rm -rf "$KLIPPER_BUILD_DIR"
-    
-    echo "Build process completed successfully!"
+    echo "Build process completed!"
 }
-
 
 main
