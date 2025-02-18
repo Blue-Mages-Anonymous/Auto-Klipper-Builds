@@ -62,12 +62,21 @@ jobs:
             echo "$BOARD_LIST" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
 
+    - name: Debug Directory Contents
+      run: |
+        pwd
+        tree -L 6
+        ls -la
+        ls -la firmware_binaries/
+
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        files: firmware_binaries/*
-        name: Klipper ${{ needs.check_version.outputs.version }} Firmware Builds
         tag_name: ${{ needs.check_version.outputs.version }}
+        release_name: Klipper ${{ needs.check_version.outputs.version }} Firmware Builds
         body: |
           Automated firmware builds for Klipper version ${{ needs.check_version.outputs.version }}
 
@@ -76,8 +85,21 @@ jobs:
           ```
 
           Each firmware file is named according to its target board.
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Assets
+      uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        for file in firmware_binaries/*; do
+          curl \
+            -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H "Content-Type: $(file -b --mime-type $file)" \
+            --data-binary @$file \
+            "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ steps.create_release.outputs.id }}/assets?name=$(basename $file)"
+        done
 
     - name: Cleanup build
       if: always()
