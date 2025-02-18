@@ -53,10 +53,15 @@ jobs:
     - name: Build firmware
       id: build
       run: |
-        chmod +x ./build_klipper.sh
-        ./build_klipper.sh
-        echo "board_list=$(cat board_list.txt)" >> $GITHUB_OUTPUT
-      
+            chmod +x ./build_klipper.sh
+            ./build_klipper.sh
+            # Capture the whole content of board_list.txt including formatting
+            BOARD_LIST=$(cat board_list.txt)
+            # Use delimiter syntax to handle multi-line strings
+            echo "board_list<<EOF" >> $GITHUB_OUTPUT
+            echo "$BOARD_LIST" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
@@ -65,12 +70,14 @@ jobs:
         tag_name: ${{ needs.check_version.outputs.version }}
         body: |
           Automated firmware builds for Klipper version ${{ needs.check_version.outputs.version }}
-          
+
+          ```
           ${{ steps.build.outputs.board_list }}
-          
+          ```
+
           Each firmware file is named according to its target board.
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Cleanup build
       if: always()
