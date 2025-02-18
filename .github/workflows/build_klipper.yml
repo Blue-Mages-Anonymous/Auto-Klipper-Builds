@@ -71,3 +71,8 @@ jobs:
           Each firmware file is named according to its target board.
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Cleanup build
+      if: always()
+      run: |
+        rm -rf ./*        

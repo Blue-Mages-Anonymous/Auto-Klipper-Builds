@@ -47,11 +47,9 @@ main() {
     # Ensure we're in the script's directory
     cd "$(dirname "$0")"
     
-    # Create necessary directories
-    mkdir -p {configs,firmware_binaries}
-    
     # Clone or update Klipper repository in build directory
     if [ ! -d "$KLIPPER_BUILD_DIR" ]; then
+        echo "Cloning Klipper"
         git clone "$KLIPPER_REPO" "$KLIPPER_BUILD_DIR"
     else
         cd "$KLIPPER_BUILD_DIR"
@@ -81,12 +79,12 @@ main() {
         
         cd "$KLIPPER_BUILD_DIR"
         pwd 
+        ls -al
         # Load config if exists, otherwise create it
         if [ -f "../configs/$board.config" ]; then
             load_menuconfig "../configs/$board.config"
         else
-            echo "No config found for $board. Please configure and save:"
-            save_menuconfig "$board"
+            echo "No config found for $board. Please configure one:"
             continue
         fi
         
