@@ -102,7 +102,9 @@ jobs:
         done
 
     - name: Cleanup build
-      if: always()
-      run: |
-        echo "Cleaning up repository directory: ${GITHUB_WORKSPACE##*/}"
-        # rm -rf ${GITHUB_WORKSPACE##*/}
+    if: always()
+    run: |
+        echo "Initial workspace at: $GITHUB_WORKSPACE"
+        cd $RUNNER_WORKSPACE
+        echo "Runner workspace at: $RUNNER_WORKSPACE"
+        rm -rf ${GITHUB_WORKSPACE##*/}
