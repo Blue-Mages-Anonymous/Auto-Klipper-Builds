@@ -1,0 +1,74 @@
+name: Build Klipper Firmware
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at midnight UTC
+  workflow_dispatch:      # Allow manual trigger
+
+jobs:
+  check_version:
+    runs-on: self-hosted
+    outputs:
+      build_needed: ${{ steps.check_version.outputs.build_needed }}
+      version: ${{ steps.check_version.outputs.version }}
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
+    - name: Check for new Klipper version
+      id: check_version
+      run: |
+        # Clone Klipper to check latest version
+        git clone --depth=1 https://github.com/Klipper3d/klipper.git temp_klipper
+        cd temp_klipper
+        LATEST_TAG=$(git describe --tags --always)
+        cd ..
+        rm -rf temp_klipper
+        
+        # Check if we already have this version
+        if git ls-remote --tags origin | grep -q "$LATEST_TAG"; then
+          echo "Version $LATEST_TAG already built"
+          echo "build_needed=false" >> $GITHUB_OUTPUT
+        else
+          echo "New version $LATEST_TAG found"
+          echo "build_needed=true" >> $GITHUB_OUTPUT
+          echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
+        fi
+
+  build:
+    needs: check_version
+    if: needs.check_version.outputs.build_needed == 'true'
+    runs-on: self-hosted
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi binutils g++ python3-pip
+        pip3 install -U platformio
+    
+    - name: Build firmware
+      id: build
+      run: |
+        chmod +x ./build_klipper.sh
+        ./build_klipper.sh
+        echo "board_list=$(cat board_list.txt)" >> $GITHUB_OUTPUT
+      
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: firmware_binaries/*
+        name: Klipper ${{ needs.check_version.outputs.version }} Firmware Builds
+        tag_name: ${{ needs.check_version.outputs.version }}
+        body: |
+          Automated firmware builds for Klipper version ${{ needs.check_version.outputs.version }}
+          
+          ${{ steps.build.outputs.board_list }}
+          
+          Each firmware file is named according to its target board.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
