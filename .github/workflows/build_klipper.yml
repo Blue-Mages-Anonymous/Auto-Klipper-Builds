@@ -5,6 +5,9 @@ on:
     - cron: '0 0 * * *'  # Run daily at midnight UTC
   workflow_dispatch:      # Allow manual trigger
 
+permissions:
+  contents: write
+
 jobs:
   check_version:
     runs-on: self-hosted
