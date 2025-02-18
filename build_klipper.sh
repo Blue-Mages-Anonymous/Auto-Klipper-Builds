@@ -71,13 +71,16 @@ main() {
     done
     cat board_list.txt
 
+    #Check where we are working directory wise
+    pwd
+
     # Build for each board
     for board in "${!BOARD_CONFIGS[@]}"; do
         output_file="${BOARD_CONFIGS[$board]}"
         echo "Building for $board -> $output_file"
         
         cd "$KLIPPER_BUILD_DIR"
-        
+        pwd 
         # Load config if exists, otherwise create it
         if [ -f "../configs/$board.config" ]; then
             load_menuconfig "../configs/$board.config"
