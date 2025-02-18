@@ -20,7 +20,6 @@ jobs:
     - name: Check for new Klipper version
       id: check_version
       run: |
-        # Clone Klipper to check latest version
         git clone --depth=1 https://github.com/Klipper3d/klipper.git temp_klipper
         cd temp_klipper
         LATEST_TAG=$(git describe --tags --always)
