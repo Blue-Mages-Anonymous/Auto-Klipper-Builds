@@ -28,16 +28,24 @@ jobs:
         LATEST_TAG=$(git describe --tags --always)
         cd ..
         rm -rf temp_klipper
+        CURRENT_DATE=$(date +"%Y-%m-%d")
         
         # Check if we already have this version
         if git ls-remote --tags origin | grep -q "$LATEST_TAG"; then
           echo "Version $LATEST_TAG already built"
           echo "build_needed=false" >> $GITHUB_OUTPUT
+          echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "run_name=${CURRENT_DATE} Already built: $LATEST_TAG" >> $GITHUB_OUTPUT
         else
           echo "New version $LATEST_TAG found"
           echo "build_needed=true" >> $GITHUB_OUTPUT
           echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "run_name=Built & Released Version: $LATEST_TAG" >> $GITHUB_OUTPUT
         fi
+    
+    - name: Set workflow run name based on if we had the version or if we are building it.
+      run: echo "GITHUB_RUN_NAME=${{ steps.check_version.outputs.run_name }}" >> $GITHUB_ENV
+
 
   build:
     needs: check_version
