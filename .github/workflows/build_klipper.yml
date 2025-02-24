@@ -45,6 +45,7 @@ jobs:
     
     - name: Set workflow run name based on if we had the version or if we are building it.
       run: echo "GITHUB_RUN_NAME=${{ steps.check_version.outputs.run_name }}" >> $GITHUB_ENV
+      run-name: ${{ steps.check_version.outputs.run_name }}
 
 
   build:
