@@ -28,6 +28,21 @@ get_latest_klipper_version() {
     echo "$latest_tag"
 }
 
+update_config() {
+    local original_config=$1
+    echo "Updating config file: $original_config"
+    
+    cp "$original_config" .config
+    make olddefconfig
+    
+    if ! cmp -s .config "$original_config"; then
+        echo "Config has changed, updating: $original_config"
+        cp .config "$original_config"
+    else
+        echo "No changes detected in: $original_config"
+    fi
+}
+
 build_firmware() {
     board_config=$1
     output_path=$2
@@ -101,6 +116,7 @@ main() {
         cd "$KLIPPER_BUILD_DIR"
         
         echo "Loading config for $board"
+        update_config "../$config_file"
         load_menuconfig "../$config_file"
         
         echo "Building firmware for $board"

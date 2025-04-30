@@ -105,10 +105,15 @@ jobs:
             "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ steps.create_release.outputs.id }}/assets?name=$(basename $file)"
         done
 
-    # - name: Cleanup build
-    #   if: always()
-    #   run: |
-    #     echo "Initial workspace at: $GITHUB_WORKSPACE"
-    #     cd $RUNNER_WORKSPACE
-    #     echo "Runner workspace at: $RUNNER_WORKSPACE"
-    #     rm -rf ${GITHUB_WORKSPACE##*/}
+    - name: Commit updated configs if any
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        git add configs/*.config
+        if git diff --cached --quiet; then
+          echo "No config changes to commit."
+        else
+          git commit -m "Update configs with make olddefconfig"
+          git push
+        fi
