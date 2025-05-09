@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   check_version:
-    runs-on: [self-hosted, ARM64]
+    runs-on: [self-hosted, Linux, ARM64]
     outputs:
       build_needed: ${{ steps.check_version.outputs.build_needed }}
       version: ${{ steps.check_version.outputs.version }}
