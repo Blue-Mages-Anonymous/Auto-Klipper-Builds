@@ -46,7 +46,7 @@ jobs:
   build:
     needs: check_version
     if: needs.check_version.outputs.build_needed == 'true'
-    runs-on: [self-hosted, ARM64]
+    runs-on: [self-hosted, Linux, ARM64]
     
     steps:
     - uses: actions/checkout@v3
